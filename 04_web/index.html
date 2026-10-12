@@ -1,0 +1,2162 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>FoodSafe-IoT | Food Safety Monitoring System</title>
+  <script>
+    window.API_BASE = window.location.port === '5000' ? '' : 'http://localhost:5000';
+    window.MQ135_WARNING_THRESHOLD = 200;
+  </script>
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Space+Grotesk:wght@500;600;700&display=swap');
+
+    :root {
+      --canvas: #07111d;
+      --sidebar: #091522;
+      --surface: #0d1b2a;
+      --surface2: #112438;
+      --line: rgba(153, 190, 219, .13);
+      --text: #edf6ff;
+      --muted: #7890a6;
+      --blue: #4ab6ff;
+      --cyan: #63e6e2;
+      --green: #4ed49a;
+      --amber: #f6bd60;
+      --red: #ff6b78;
+      --shadow: 0 18px 50px rgba(0, 0, 0, .22)
+    }
+
+    * {
+      box-sizing: border-box
+    }
+
+    body {
+      margin: 0;
+      min-width: 1180px;
+      background: var(--canvas);
+      color: var(--text);
+      font: 14px 'DM Sans', sans-serif
+    }
+
+    button,
+    input {
+      font: inherit
+    }
+
+    button {
+      cursor: pointer
+    }
+
+    .app {
+      display: grid;
+      grid-template-columns: 232px 1fr;
+      min-height: 100vh
+    }
+
+    .sidebar {
+      border-right: 1px solid var(--line);
+      background: var(--sidebar);
+      padding: 27px 16px;
+      display: flex;
+      flex-direction: column
+    }
+
+    .brand {
+      display: flex;
+      align-items: center;
+      gap: 11px;
+      padding: 0 11px 30px
+    }
+
+    .brand-mark {
+      width: 34px;
+      height: 34px;
+      border-radius: 10px;
+      display: grid;
+      place-items: center;
+      color: #06121e;
+      font-weight: 800;
+      background: linear-gradient(145deg, var(--cyan), var(--blue));
+      box-shadow: 0 0 24px rgba(74, 182, 255, .35)
+    }
+
+    .brand strong {
+      font: 700 17px 'Space Grotesk';
+      letter-spacing: -.5px
+    }
+
+    .brand small {
+      display: block;
+      margin-top: 2px;
+      color: var(--muted);
+      font-size: 10px;
+      letter-spacing: .3px
+    }
+
+    .nav-label {
+      padding: 13px 12px 8px;
+      color: #536b81;
+      font-size: 10px;
+      font-weight: 700;
+      letter-spacing: 1.5px;
+      text-transform: uppercase
+    }
+
+    .nav-item {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      margin: 3px 0;
+      padding: 11px 12px;
+      color: var(--muted);
+      border-radius: 9px;
+      transition: .2s
+    }
+
+    .nav-item:hover,
+    .nav-item.active {
+      color: var(--text);
+      background: rgba(74, 182, 255, .11)
+    }
+
+    .nav-item.active {
+      box-shadow: inset 2px 0 var(--blue)
+    }
+
+    .nav-icon {
+      width: 18px;
+      text-align: center;
+      color: #7490a7;
+      font-size: 16px
+    }
+
+    .nav-item.active .nav-icon {
+      color: var(--blue)
+    }
+
+    .health {
+      margin-top: auto;
+      border: 1px solid var(--line);
+      border-radius: 12px;
+      background: rgba(17, 36, 56, .66);
+      padding: 14px
+    }
+
+    .health-title {
+      display: flex;
+      justify-content: space-between;
+      margin-bottom: 14px;
+      font-weight: 600
+    }
+
+    .health-row {
+      display: flex;
+      justify-content: space-between;
+      margin-top: 10px;
+      color: var(--muted);
+      font-size: 12px
+    }
+
+    .health-row b {
+      color: var(--green);
+      font-weight: 600
+    }
+
+    .content {
+      padding: 0 32px 38px;
+      overflow: hidden
+    }
+
+    .topbar {
+      height: 84px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      border-bottom: 1px solid var(--line)
+    }
+
+    .eyebrow {
+      color: var(--blue);
+      font-size: 11px;
+      font-weight: 700;
+      letter-spacing: 1.5px;
+      text-transform: uppercase
+    }
+
+    h1 {
+      margin: 5px 0 0;
+      font: 700 24px 'Space Grotesk';
+      letter-spacing: -.7px
+    }
+
+    .top-actions {
+      display: flex;
+      align-items: center;
+      gap: 13px
+    }
+
+    .date {
+      color: var(--muted);
+      font-size: 12px;
+      text-align: right;
+      line-height: 1.5
+    }
+
+    .icon-btn {
+      width: 36px;
+      height: 36px;
+      border: 1px solid var(--line);
+      color: #91aac0;
+      border-radius: 9px;
+      background: var(--surface)
+    }
+
+    .export-btn {
+      border: 0;
+      border-radius: 8px;
+      padding: 10px 15px;
+      color: #04111c;
+      background: var(--cyan);
+      font-weight: 700
+    }
+
+    .profile {
+      display: flex;
+      align-items: center;
+      gap: 9px;
+      padding-left: 7px;
+      border-left: 1px solid var(--line)
+    }
+
+    .avatar {
+      width: 31px;
+      height: 31px;
+      display: grid;
+      place-items: center;
+      color: #06121e;
+      border-radius: 50%;
+      background: var(--amber);
+      font-weight: 800
+    }
+
+    .profile small {
+      color: var(--muted);
+      display: block;
+      font-size: 10px
+    }
+
+    .profile b {
+      font-size: 12px
+    }
+
+    .page-heading {
+      display: flex;
+      justify-content: space-between;
+      align-items: end;
+      margin: 29px 0 18px
+    }
+
+    .page-heading h2 {
+      margin: 0;
+      font: 600 18px 'Space Grotesk'
+    }
+
+    .online {
+      display: inline-flex;
+      align-items: center;
+      gap: 7px;
+      color: var(--green);
+      font-size: 12px
+    }
+
+    .dot {
+      width: 7px;
+      height: 7px;
+      border-radius: 50%;
+      background: var(--green);
+      box-shadow: 0 0 10px var(--green)
+    }
+
+    .overview {
+      display: grid;
+      grid-template-columns: repeat(6, 1fr);
+      gap: 12px
+    }
+
+    .stat,
+    .panel {
+      border: 1px solid var(--line);
+      background: linear-gradient(145deg, rgba(17, 36, 56, .9), rgba(10, 25, 40, .9));
+      box-shadow: var(--shadow)
+    }
+
+    .stat {
+      min-height: 105px;
+      padding: 16px;
+      border-radius: 11px
+    }
+
+    .stat-label {
+      color: var(--muted);
+      font-size: 11px
+    }
+
+    .stat-value {
+      margin: 12px 0 7px;
+      font: 700 25px 'Space Grotesk'
+    }
+
+    .stat-trend {
+      color: var(--green);
+      font-size: 10px
+    }
+
+    .stat-trend.amber {
+      color: var(--amber)
+    }
+
+    .stat-trend.red {
+      color: var(--red)
+    }
+
+    .dashboard-grid {
+      display: grid;
+      grid-template-columns: repeat(12, 1fr);
+      gap: 15px;
+      margin-top: 15px
+    }
+
+    .panel {
+      border-radius: 12px;
+      padding: 18px
+    }
+
+    .panel-head {
+      display: flex;
+      align-items: start;
+      justify-content: space-between;
+      margin-bottom: 15px
+    }
+
+    .panel-title {
+      margin: 0;
+      font: 600 14px 'Space Grotesk'
+    }
+
+    .panel-subtitle {
+      margin-top: 4px;
+      color: var(--muted);
+      font-size: 11px
+    }
+
+    .panel-link {
+      color: var(--blue);
+      font-size: 11px
+    }
+
+    .sensors {
+      grid-column: span 8
+    }
+
+    .sensor-grid {
+      display: grid;
+      grid-template-columns: repeat(5, 1fr);
+      gap: 10px
+    }
+
+    .sensor {
+      min-height: 162px;
+      border: 1px solid var(--line);
+      border-radius: 9px;
+      padding: 13px;
+      background: rgba(7, 17, 29, .55)
+    }
+
+    .sensor-top {
+      display: flex;
+      justify-content: space-between;
+      color: var(--muted);
+      font-size: 11px
+    }
+
+    .sensor-icon {
+      color: var(--blue);
+      font-size: 17px
+    }
+
+    .sensor-value {
+      margin-top: 15px;
+      font: 700 23px 'Space Grotesk'
+    }
+
+    .sensor-unit {
+      color: var(--muted);
+      font-size: 10px
+    }
+
+    .sensor-range {
+      margin-top: 10px;
+      color: var(--muted);
+      font-size: 10px
+    }
+
+    .sensor-status {
+      display: inline-flex;
+      align-items: center;
+      gap: 5px;
+      margin-top: 12px;
+      color: var(--green);
+      font-size: 10px
+    }
+
+    .mini-line {
+      width: 100%;
+      height: 27px;
+      margin-top: 7px
+    }
+
+    .risk {
+      grid-column: span 4
+    }
+
+    .risk-body {
+      display: flex;
+      align-items: center;
+      gap: 20px;
+      min-height: 170px
+    }
+
+    .donut {
+      width: 135px;
+      height: 135px;
+      position: relative;
+      flex: 0 0 auto;
+      display: grid;
+      place-items: center;
+      border-radius: 50%;
+      background: conic-gradient(var(--green) 0 68%, var(--amber) 68% 88%, var(--red) 88% 100%);
+      box-shadow: 0 0 26px rgba(78, 212, 154, .13)
+    }
+
+    .donut:before {
+      content: '';
+      position: absolute;
+      width: 98px;
+      height: 98px;
+      border-radius: 50%;
+      background: var(--surface)
+    }
+
+    .donut-center {
+      position: relative;
+      text-align: center
+    }
+
+    .donut-center b {
+      display: block;
+      font: 700 23px 'Space Grotesk'
+    }
+
+    .donut-center span {
+      color: var(--muted);
+      font-size: 10px
+    }
+
+    .legend {
+      display: grid;
+      gap: 11px;
+      width: 100%
+    }
+
+    .legend-row {
+      display: flex;
+      justify-content: space-between;
+      color: var(--muted);
+      font-size: 11px
+    }
+
+    .legend-label {
+      display: flex;
+      align-items: center;
+      gap: 7px;
+      color: #c4d5e3
+    }
+
+    .legend-mark {
+      width: 7px;
+      height: 7px;
+      border-radius: 2px
+    }
+
+    .chart-large {
+      grid-column: span 8
+    }
+
+    .chart-small {
+      grid-column: span 4
+    }
+
+    .chart-row {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 15px;
+      grid-column: span 12
+    }
+
+    canvas {
+      width: 100%;
+      height: 178px;
+      display: block
+    }
+
+    .map {
+      grid-column: span 5
+    }
+
+    .map-canvas {
+      position: relative;
+      height: 226px;
+      overflow: hidden;
+      border: 1px solid rgba(99, 230, 226, .12);
+      border-radius: 9px;
+      background: #0a1b2a;
+      background-image: linear-gradient(rgba(99, 230, 226, .07) 1px, transparent 1px), linear-gradient(90deg, rgba(99, 230, 226, .07) 1px, transparent 1px);
+      background-size: 38px 38px
+    }
+
+    .road {
+      position: absolute;
+      height: 2px;
+      width: 140%;
+      background: rgba(116, 154, 180, .24);
+      transform: rotate(-20deg);
+      top: 54%;
+      left: -15%
+    }
+
+    .road.two {
+      top: 25%;
+      transform: rotate(28deg)
+    }
+
+    .marker {
+      position: absolute;
+      width: 11px;
+      height: 11px;
+      border: 2px solid #081522;
+      border-radius: 50%;
+      background: var(--green);
+      box-shadow: 0 0 0 5px rgba(78, 212, 154, .13), 0 0 16px var(--green)
+    }
+
+    .marker.warn {
+      background: var(--amber);
+      box-shadow: 0 0 0 5px rgba(246, 189, 96, .13), 0 0 16px var(--amber)
+    }
+
+    .map-popup {
+      position: absolute;
+      width: 155px;
+      right: 13px;
+      bottom: 13px;
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      padding: 10px;
+      background: rgba(7, 17, 29, .9);
+      font-size: 10px
+    }
+
+    .map-popup b {
+      display: block;
+      margin-bottom: 7px;
+      color: var(--cyan)
+    }
+
+    .map-popup div {
+      display: flex;
+      justify-content: space-between;
+      margin-top: 5px;
+      color: var(--muted)
+    }
+
+    .map-popup strong {
+      color: var(--text);
+      font-weight: 500
+    }
+
+    .alerts {
+      grid-column: span 4
+    }
+
+    .alert {
+      display: flex;
+      gap: 10px;
+      padding: 12px 0;
+      border-bottom: 1px solid var(--line)
+    }
+
+    .alert:last-child {
+      border: 0
+    }
+
+    .alert-icon {
+      width: 29px;
+      height: 29px;
+      display: grid;
+      place-items: center;
+      border-radius: 8px;
+      color: var(--amber);
+      background: rgba(246, 189, 96, .12)
+    }
+
+    .alert b {
+      display: block;
+      font-size: 12px
+    }
+
+    .alert small {
+      display: block;
+      margin-top: 4px;
+      color: var(--muted);
+      font-size: 10px
+    }
+
+    .alert.red .alert-icon {
+      color: var(--red);
+      background: rgba(255, 107, 120, .1)
+    }
+
+    .top-items {
+      grid-column: span 3
+    }
+
+    .item {
+      display: grid;
+      grid-template-columns: 32px 1fr 38px;
+      align-items: center;
+      gap: 9px;
+      margin: 14px 0
+    }
+
+    .food-icon {
+      display: grid;
+      place-items: center;
+      width: 31px;
+      height: 31px;
+      border-radius: 8px;
+      background: var(--surface2);
+      font-size: 16px
+    }
+
+    .item-info b {
+      display: block;
+      font-size: 11px
+    }
+
+    .progress {
+      height: 4px;
+      margin-top: 7px;
+      border-radius: 10px;
+      background: #203448;
+      overflow: hidden
+    }
+
+    .progress i {
+      display: block;
+      height: 100%;
+      border-radius: inherit;
+      background: var(--blue)
+    }
+
+    .item-count {
+      color: var(--muted);
+      font-size: 10px;
+      text-align: right
+    }
+
+    .activity {
+      grid-column: span 7
+    }
+
+    .activity-row {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      padding: 10px 0;
+      border-bottom: 1px solid var(--line)
+    }
+
+    .activity-row:last-child {
+      border: 0
+    }
+
+    .activity-dot {
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      background: var(--green)
+    }
+
+    .activity-row b {
+      font-size: 11px;
+      font-weight: 600
+    }
+
+    .activity-row small {
+      display: block;
+      margin-top: 3px;
+      color: var(--muted);
+      font-size: 10px
+    }
+
+    .scan {
+      grid-column: span 5
+    }
+
+    .upload {
+      display: flex;
+      gap: 10px;
+      align-items: center;
+      border: 1px dashed rgba(74, 182, 255, .35);
+      border-radius: 8px;
+      padding: 13px;
+      background: rgba(74, 182, 255, .05)
+    }
+
+    .upload input {
+      display: none
+    }
+
+    .upload label {
+      color: var(--blue);
+      font-weight: 600;
+      cursor: pointer
+    }
+
+    .upload span {
+      color: var(--muted);
+      font-size: 11px
+    }
+
+    .scan-controls {
+      display: flex;
+      gap: 8px;
+      margin-top: 12px
+    }
+
+    .scan-controls input {
+      width: 90px;
+      border: 1px solid var(--line);
+      border-radius: 6px;
+      padding: 8px;
+      color: var(--text);
+      background: var(--surface)
+    }
+
+    .scan-btn {
+      border: 0;
+      border-radius: 6px;
+      padding: 8px 13px;
+      color: #06121e;
+      background: var(--cyan);
+      font-weight: 700
+    }
+
+    .scan-result {
+      margin-top: 13px;
+      color: var(--muted);
+      font-size: 11px
+    }
+
+    @media(max-width:1250px) {
+      body {
+        min-width: 980px
+      }
+
+      .overview {
+        grid-template-columns: repeat(3, 1fr)
+      }
+
+      .sensor-grid {
+        grid-template-columns: repeat(3, 1fr)
+      }
+
+      .sensors,
+      .chart-large {
+        grid-column: span 12
+      }
+
+      .risk,
+      .chart-small {
+        grid-column: span 6
+      }
+    }
+
+    @media (max-width: 1250px) {
+      body {
+        min-width: 0;
+      }
+    }
+
+    @media (max-width: 900px) {
+      .app {
+        grid-template-columns: 190px minmax(0, 1fr);
+      }
+
+      .sidebar,
+      .content {
+        min-width: 0;
+      }
+
+      .content {
+        padding: 0 18px 28px;
+      }
+
+      .top-actions .date,
+      .top-actions .icon-btn {
+        display: none;
+      }
+
+      .overview {
+        grid-template-columns: repeat(2, 1fr);
+      }
+
+      .sensor-grid {
+        grid-template-columns: repeat(2, 1fr);
+      }
+
+      .chart-row {
+        grid-template-columns: 1fr;
+      }
+
+      .chart-row,
+      .map,
+      .alerts,
+      .top-items,
+      .activity,
+      .scan {
+        grid-column: span 12;
+      }
+    }
+  </style>
+  <style>
+    .scan-options {
+      display: flex;
+      gap: 8px;
+      align-items: center;
+      flex-wrap: wrap
+    }
+
+    .camera-btn {
+      border: 1px solid rgba(99, 230, 226, .35);
+      border-radius: 6px;
+      padding: 8px 12px;
+      color: var(--cyan);
+      background: rgba(99, 230, 226, .07);
+      font-weight: 600
+    }
+
+    .camera-preview {
+      display: none;
+      width: 100%;
+      height: clamp(220px, 55vh, 560px);
+      margin-top: 10px;
+      border-radius: 8px;
+      object-fit: contain;
+      background: #020911
+    }
+
+    .camera-actions {
+      display: none;
+      gap: 8px;
+      margin-top: 8px
+    }
+
+    .camera-actions button {
+      border: 1px solid var(--line);
+      border-radius: 6px;
+      padding: 7px 11px;
+      color: var(--text);
+      background: var(--surface2)
+    }
+
+    /* === Phase 1: XAI Result Card === */
+    .xai-card {
+      display: none;
+      margin-top: 13px;
+      border: 1px solid var(--line);
+      border-radius: 10px;
+      padding: 14px;
+      background: rgba(7, 17, 29, .7)
+    }
+
+    .xai-card.visible {
+      display: block
+    }
+
+    .xai-header {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      margin-bottom: 12px
+    }
+
+    .risk-badge {
+      padding: 4px 12px;
+      border-radius: 20px;
+      font: 700 12px 'Space Grotesk';
+      letter-spacing: .5px
+    }
+
+    .risk-badge.SAFE {
+      color: #021a0c;
+      background: var(--green);
+      box-shadow: 0 0 12px rgba(78, 212, 154, .35)
+    }
+
+    .risk-badge.WARNING {
+      color: #1a1200;
+      background: var(--amber);
+      box-shadow: 0 0 12px rgba(246, 189, 96, .35)
+    }
+
+    .risk-badge.UNSAFE {
+      color: #1a0305;
+      background: var(--red);
+      box-shadow: 0 0 12px rgba(255, 107, 120, .35)
+    }
+
+    .xai-pred {
+      font-size: 11px;
+      color: var(--muted);
+      flex: 1
+    }
+
+    .xai-score-label {
+      font: 700 13px 'Space Grotesk';
+      color: var(--text)
+    }
+
+    .sub-scores {
+      display: grid;
+      gap: 7px;
+      margin: 10px 0
+    }
+
+    .sub-row {
+      display: flex;
+      align-items: center;
+      gap: 9px;
+      font-size: 11px;
+      color: var(--muted)
+    }
+
+    .sub-row span:first-child {
+      width: 115px;
+      flex: 0 0 auto
+    }
+
+    .sub-bar-track {
+      flex: 1;
+      height: 5px;
+      border-radius: 4px;
+      background: #1a2e40;
+      overflow: hidden
+    }
+
+    .sub-bar-fill {
+      height: 100%;
+      border-radius: 4px;
+      transition: width .5s ease
+    }
+
+    .sub-row b {
+      width: 35px;
+      text-align: right;
+      font-size: 10px
+    }
+
+    .driver-pill {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      margin-top: 9px;
+      padding: 4px 10px;
+      border-radius: 14px;
+      background: rgba(74, 182, 255, .12);
+      border: 1px solid rgba(74, 182, 255, .25);
+      color: var(--blue);
+      font-size: 10px;
+      font-weight: 600;
+      letter-spacing: .3px
+    }
+
+    .recommendation {
+      margin-top: 10px;
+      padding: 9px 11px;
+      border-radius: 7px;
+      background: rgba(17, 36, 56, .8);
+      border-left: 3px solid var(--cyan);
+      color: #b8d4ea;
+      font-size: 11px;
+      line-height: 1.55
+    }
+
+    /* === Danger Zone Tile === */
+    .dz-minutes {
+      margin: 15px 0 7px;
+      font: 700 26px 'Space Grotesk'
+    }
+
+    .dz-label {
+      color: var(--muted);
+      font-size: 10px;
+      margin-bottom: 10px
+    }
+
+    .dz-bar-track {
+      width: 100%;
+      height: 5px;
+      border-radius: 4px;
+      background: #1a2e40;
+      overflow: hidden;
+      margin-bottom: 8px
+    }
+
+    .dz-bar-fill {
+      height: 100%;
+      border-radius: 4px;
+      transition: width .6s ease;
+      background: var(--green)
+    }
+
+    .sensor-tip {
+      position: relative;
+      cursor: help
+    }
+
+    .sensor-tip .tip-text {
+      display: none;
+      position: absolute;
+      bottom: calc(100% + 6px);
+      left: 0;
+      width: 170px;
+      padding: 7px 9px;
+      border-radius: 7px;
+      background: #0a1e31;
+      border: 1px solid var(--line);
+      color: #b8d4ea;
+      font-size: 10px;
+      line-height: 1.5;
+      z-index: 10;
+      white-space: normal
+    }
+
+    /* === Tables === */
+    .table-panel {
+      grid-column: span 12;
+      overflow-x: auto
+    }
+
+    .food-table {
+      width: 100%;
+      border-collapse: collapse;
+      text-align: left;
+      font-size: 12px
+    }
+
+    .food-table th {
+      color: var(--muted);
+      font-size: 10px;
+      text-transform: uppercase;
+      letter-spacing: 1.2px;
+      padding: 12px 14px;
+      border-bottom: 1px solid var(--line);
+      font-weight: 700
+    }
+
+    .food-table td {
+      padding: 12px 14px;
+      border-bottom: 1px solid rgba(153, 190, 219, .08);
+      vertical-align: middle
+    }
+
+    .food-table tr:hover {
+      background: rgba(74, 182, 255, .03)
+    }
+
+    .food-name-cell {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      font-weight: 600;
+      color: var(--text)
+    }
+
+    .food-icon-box {
+      width: 32px;
+      height: 32px;
+      border-radius: 8px;
+      background: var(--surface2);
+      display: grid;
+      place-items: center;
+      font-size: 16px;
+      flex-shrink: 0
+    }
+
+    .badge {
+      display: inline-flex;
+      align-items: center;
+      padding: 3px 9px;
+      border-radius: 12px;
+      font-size: 10px;
+      font-weight: 700;
+      letter-spacing: .4px
+    }
+
+    .badge-safe {
+      background: rgba(78, 212, 154, .15);
+      color: var(--green);
+      border: 1px solid rgba(78, 212, 154, .3)
+    }
+
+    .badge-warn {
+      background: rgba(246, 189, 96, .15);
+      color: var(--amber);
+      border: 1px solid rgba(246, 189, 96, .3)
+    }
+
+    .badge-unsafe {
+      background: rgba(255, 107, 120, .15);
+      color: var(--red);
+      border: 1px solid rgba(255, 107, 120, .3)
+    }
+
+    .badge-muted {
+      background: rgba(120, 144, 166, .12);
+      color: var(--muted)
+    }
+
+    .table-progress-wrap {
+      display: flex;
+      align-items: center;
+      gap: 8px
+    }
+
+    .table-progress {
+      width: 70px;
+      height: 6px;
+      border-radius: 4px;
+      background: #1a2f42;
+      overflow: hidden
+    }
+
+    .table-progress-fill {
+      height: 100%;
+      border-radius: 4px;
+      transition: width .4s ease
+    }
+
+    .code-pill {
+      font-family: monospace;
+      font-size: 10px;
+      color: var(--cyan);
+      background: rgba(99, 230, 226, .08);
+      padding: 2px 7px;
+      border-radius: 4px;
+      border: 1px solid rgba(99, 230, 226, .2)
+    }
+  </style>
+</head>
+
+<body>
+  <div class="app">
+    <aside class="sidebar">
+      <div class="brand">
+        <div class="brand-mark">FS</div>
+        <div><strong>FoodSafe-IoT</strong><small>SMART FOOD SAFETY</small></div>
+      </div>
+      <div class="nav-label">Workspace</div>
+      <div class="nav-item active"><span class="nav-icon"></span>Dashboard</div>
+      <div class="nav-item"><span class="nav-icon"></span>Live Monitoring</div>
+      <div class="nav-item"><span class="nav-icon"></span>Devices</div>
+      <div class="nav-item"><span class="nav-icon">|</span>Test &amp; Scan</div>
+      <div class="nav-item"><span class="nav-icon"></span>Analytics</div>
+      <div class="nav-item"><span class="nav-icon">!</span>Alerts <span
+          style="margin-left:auto;color:var(--red);font-size:10px">03</span></div>
+      <div class="nav-label">Operations</div>
+      <div class="nav-item"><span class="nav-icon"></span>Inventory</div>
+      <div class="nav-item"><span class="nav-icon"></span>Reports</div>
+      <div class="nav-item"><span class="nav-icon"></span>Users</div>
+      <div class="nav-item"><span class="nav-icon"></span>Settings</div>
+      <div class="nav-item"><span class="nav-icon"></span>AI Insights</div>
+      <div class="health">
+        <div class="health-title"><span>System Health</span><span class="dot"></span></div>
+        <div class="health-row"><span>AI engine</span><b>Operational</b></div>
+        <div class="health-row"><span>Model Acc.</span><b id="modelAccStat">92.0%</b></div>
+        <div class="health-row"><span>Binary F1</span><b id="modelF1Stat">0.933</b></div>
+        <div class="health-row"><span>Database</span><b>Connected</b></div>
+      </div>
+    </aside>
+    <main class="content">
+      <header class="topbar">
+        <div>
+          <div class="eyebrow">Food Safety Monitoring System</div>
+          <h1>Command center</h1>
+        </div>
+        <div class="top-actions">
+          <div class="date"><span id="currentDate">05 September 2026</span><br><span id="currentTime">--:--:--</span>
+          </div><button class="icon-btn" aria-label="Search">|</button><button class="icon-btn"
+            aria-label="Notifications"></button><button class="icon-btn" aria-label="Dark mode"></button><button
+            class="export-btn" onclick="window.print()"> Export Report</button>
+          <div class="profile">
+            <div class="avatar">AD</div>
+            <div><b>MANOJ D K</b><small>Operations</small></div>
+          </div>
+        </div>
+      </header>
+      <div class="page-heading">
+        <div>
+          <div class="eyebrow">Overview / Live environment</div>
+          <h2>Good afternoon, MANOJ</h2>
+        </div>
+        <div class="online"><span class="dot"></span><span id="systemStatus">System Online</span> <span
+            style="color:var(--muted);margin-left:5px"> Updated just now</span></div>
+      </div>
+      <section class="overview">
+        <div class="stat">
+          <div class="stat-label">Total Devices</div>
+          <div class="stat-value" id="totalDevicesStat">0</div>
+          <div class="stat-trend" id="totalDevicesTrend">Awaiting live data</div>
+        </div>
+        <div class="stat">
+          <div class="stat-label">Safe %</div>
+          <div class="stat-value" id="safePercentStat">0%</div>
+          <div class="stat-trend">All scanned records</div>
+        </div>
+        <div class="stat">
+          <div class="stat-label">At Risk %</div>
+          <div class="stat-value" id="riskPercentStat">0%</div>
+          <div class="stat-trend amber">All scanned records</div>
+        </div>
+        <div class="stat">
+          <div class="stat-label">Unsafe %</div>
+          <div class="stat-value" id="unsafePercentStat">0%</div>
+          <div class="stat-trend red">All scanned records</div>
+        </div>
+        <div class="stat">
+          <div class="stat-label">Total Scans</div>
+          <div class="stat-value" id="totalScansStat">0</div>
+          <div class="stat-trend" id="totalScansTrend">Stored in database</div>
+        </div>
+        <div class="stat">
+          <div class="stat-label">Avg. Shelf Life</div>
+          <div class="stat-value" id="shelfLifeStat">0 <small style="font-size:12px;color:var(--muted)">days</small>
+          </div>
+          <div class="stat-trend">Awaiting analysis</div>
+        </div>
+      </section>
+      <section class="dashboard-grid">
+        <div class="panel sensors">
+          <div class="panel-head">
+            <div>
+              <h3 class="panel-title">Real-time Sensor Readings</h3>
+              <div class="panel-subtitle" id="sensorSubtitle">ESP32_001 &nbsp;·&nbsp; Cold Storage Unit A &nbsp;·&nbsp;
+                Telemetry</div>
+            </div>
+            <div style="display:flex;align-items:center;gap:10px"><button id="simBtn" type="button"
+                onclick="toggleSimulation()"
+                style="border:1px solid rgba(99,230,226,.35);background:rgba(99,230,226,.08);color:var(--cyan);font-size:11px;font-weight:600;padding:5px 11px;border-radius:7px;cursor:pointer;display:inline-flex;align-items:center;gap:6px;transition:0.2s"><span
+                  class="dot" id="simDot"
+                  style="width:6px;height:6px;background:var(--cyan);box-shadow:none;"></span><span
+                  id="simBtnText">Simulate Live Data</span></button><span class="panel-link" id="sensorRefreshBadge">5
+                sec refresh</span></div>
+          </div>
+          <div class="sensor-grid">
+            <div class="sensor sensor-tip">
+              <div class="sensor-top"><span>Temperature</span><span class="sensor-icon">🌡</span></div><span
+                class="tip-text">Ambient storage temperature. Optimal ambient range: 20–30 °C.</span>
+              <div class="sensor-value" id="liveTempValue">--</div>
+              <div class="sensor-unit">°C</div><canvas class="mini-line" id="tempMini"></canvas>
+              <div class="sensor-range">Ideal 20–30 °C</div>
+              <div class="sensor-status" id="tempStatus"><span class="dot" id="tempDot"></span><span
+                  id="tempStatusText">Awaiting data</span></div>
+            </div>
+            <div class="sensor sensor-tip">
+              <div class="sensor-top"><span>Humidity</span><span class="sensor-icon">💧</span></div><span
+                class="tip-text">Relative humidity. High moisture accelerates mold growth above 70%.</span>
+              <div class="sensor-value" id="liveHumValue">--</div>
+              <div class="sensor-unit">%</div><canvas class="mini-line" id="humMini"></canvas>
+              <div class="sensor-range">Ideal 55–70 %</div>
+              <div class="sensor-status" id="humStatus"><span class="dot" id="humDot"></span><span
+                  id="humStatusText">Awaiting data</span></div>
+            </div>
+            <div class="sensor sensor-tip">
+              <div class="sensor-top"><span>Air Quality (MQ-135)</span><span class="sensor-icon">☁</span></div><span
+                class="tip-text">Air Quality Index from MQ-135 (0–500). Levels &gt; 200 indicate spoilage gases.</span>
+              <div class="sensor-value" id="liveGasValue">--</div>
+              <div class="sensor-unit" style="display:flex;justify-content:space-between;align-items:center;">
+                <span>AQI index</span>
+                <span id="liveGasRaw" style="font-size:11px;opacity:0.75;font-weight:normal;letter-spacing:0;">ADC: --</span>
+              </div><canvas class="mini-line" id="gasMini"></canvas>
+              <div class="sensor-range">Safe &lt; <span id="mq135ThresholdDisplay">200</span> index</div>
+              <div class="sensor-status" id="gasStatus"><span class="dot" id="gasDot"></span><span
+                  id="gasStatusText">Awaiting data</span></div>
+            </div>
+            <div class="sensor sensor-tip">
+              <div class="sensor-top"><span>Smoke &amp; Gas (MQ-2)</span><span class="sensor-icon">🔥</span></div><span
+                class="tip-text">Digital output from MQ-2. Detects combustible gas and smoke.</span>
+              <div class="sensor-value" id="liveMq135Value" style="font-size:20px; margin-bottom: 23px;">--</div>
+              <div class="sensor-range">Clear = Safe</div>
+              <div class="sensor-status" id="vocStatus"><span class="dot" id="vocDot"></span><span
+                  id="vocStatusText">Awaiting data</span></div>
+            </div>
+            <div class="sensor sensor-tip" id="dangerZoneTile">
+              <div class="sensor-top"><span>⏱ Danger Zone</span><span class="sensor-icon"
+                  style="font-size:14px;color:var(--amber)">⚠</span></div><span class="tip-text">Cumulative time food
+                has spent in the bacterial danger zone (5 °C – 60 °C). Risk escalates after 30 min; discard after 120
+                min.</span>
+              <div class="dz-minutes" id="dzMinutes">0</div>
+              <div class="dz-label">minutes at risk</div>
+              <div class="dz-bar-track">
+                <div class="dz-bar-fill" id="dzBarFill" style="width:0%"></div>
+              </div>
+              <div class="sensor-status" id="dzStatus"><span class="dot" id="dzDot"
+                  style="background:var(--green)"></span><span id="dzStatusText">Zone clear</span></div>
+            </div>
+          </div>
+        </div>
+        <div class="panel risk">
+          <div class="panel-head">
+            <div>
+              <h3 class="panel-title">AI Spoilage Prediction</h3>
+              <div class="panel-subtitle">Ensemble model confidence</div>
+            </div><span class="panel-link">Details </span>
+          </div>
+          <div class="risk-body">
+            <div class="donut">
+              <div class="donut-center"><b>92%</b><span>confidence</span></div>
+            </div>
+            <div class="legend">
+              <div class="legend-row"><span class="legend-label"><i class="legend-mark"
+                    style="background:var(--green)"></i>Safe</span><b>68%</b></div>
+              <div class="legend-row"><span class="legend-label"><i class="legend-mark"
+                    style="background:var(--amber)"></i>At Risk</span><b>20%</b></div>
+              <div class="legend-row"><span class="legend-label"><i class="legend-mark"
+                    style="background:var(--red)"></i>Unsafe</span><b>12%</b></div>
+              <div style="color:var(--green);font-size:11px;line-height:1.45;margin-top:3px">Food is safe
+                for<br>consumption.</div>
+            </div>
+          </div>
+        </div>
+        <div class="panel table-panel" style="grid-column: span 12;">
+          <div class="panel-head">
+            <div>
+              <h3 class="panel-title">MobileNetV2 Trained Food Dataset &amp; Spoilage Registry</h3>
+              <div class="panel-subtitle">Comprehensive registry of all food classes trained in the model &middot; Live
+                database synchronization</div>
+            </div>
+            <span class="panel-link" id="datasetClassCountBadge">9 Trained Categories</span>
+          </div>
+          <div style="overflow-x:auto">
+            <table class="food-table">
+              <thead>
+                <tr>
+                  <th>Food Item</th>
+                  <th>Trained Dataset Classes</th>
+                  <th>Total Scans</th>
+                  <th>Fresh (Safe)</th>
+                  <th>Rotten (Spoiled)</th>
+                  <th>Safety Rate</th>
+                  <th>Condition Status</th>
+                  <th>Last Scanned</th>
+                </tr>
+              </thead>
+              <tbody id="foodItemsTableBody">
+                <tr>
+                  <td colspan="8" style="text-align:center;color:var(--muted);padding:22px">Loading trained food dataset
+                    statistics...</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+        <div class="panel table-panel" style="grid-column: span 7;">
+          <div class="panel-head">
+            <div>
+              <h3 class="panel-title">Live AI Scan &amp; Quality Assessment Log</h3>
+              <div class="panel-subtitle">Inspection records saved in SQLite database &middot; Auto-updates on every
+                scan</div>
+            </div>
+            <span class="panel-link" id="recentScansCountBadge">0 Records</span>
+          </div>
+          <div style="overflow-x:auto;max-height:480px;overflow-y:auto">
+            <table class="food-table">
+              <thead>
+                <tr>
+                  <th>#ID</th>
+                  <th>Timestamp</th>
+                  <th>Classification</th>
+                  <th>Safety Status</th>
+                  <th>Risk Score</th>
+                </tr>
+              </thead>
+              <tbody id="recentScansTableBody">
+                <tr>
+                  <td colspan="5" style="text-align:center;color:var(--muted);padding:22px">Loading scan history...</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+        <div class="panel scan" style="grid-column: span 5;">
+          <div class="panel-head">
+            <div>
+              <h3 class="panel-title">Test &amp; Scan</h3>
+              <div class="panel-subtitle">Use a food image from upload or webcam</div>
+            </div><span class="panel-link">MobileNetV2 + CLIP</span>
+          </div>
+          <div class="scan-options">
+            <div class="upload"><span style="font-size:21px">+</span><label for="imageInput">Upload image</label><span
+                id="fileName">No image selected</span><input id="imageInput" type="file" accept="image/*"></div><button
+              class="camera-btn" id="cameraBtn" type="button">Use webcam</button>
+          </div>
+          <div style="display:flex;align-items:center;gap:8px;margin-top:10px">
+            <label style="font-size:11px;color:var(--muted);font-weight:600">Category Profile:</label>
+            <select id="foodCategorySelect"
+              style="flex:1;background:var(--surface2);color:var(--text);border:1px solid var(--line);border-radius:6px;padding:6px 8px;font-size:11px">
+              <option value="auto">✨ Auto-Detect Profile</option>
+              <option value="produce">🥬 Produce (Fruits &amp; Veggies)</option>
+              <option value="meat">🥩 Meat &amp; Poultry</option>
+              <option value="dairy">🥛 Dairy &amp; Milk Products</option>
+              <option value="bakery">🍞 Bakery &amp; Dry Goods</option>
+              <option value="general">📦 General Food Profile</option>
+            </select>
+          </div>
+          <video class="camera-preview" id="cameraPreview" autoplay playsinline></video><canvas id="cameraCanvas"
+            hidden></canvas>
+          <div class="camera-actions" id="cameraActions"><button id="captureBtn" type="button">Capture
+              photo</button><button id="closeCameraBtn" type="button">Close camera</button></div>
+          <div id="liveFeedContainer" style="margin-top:12px; margin-bottom:12px; background: rgba(7, 17, 29, 0.55); border: 1px solid var(--line); border-radius: 9px; padding: 15px;">
+            <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px;">
+              <span style="font-size:11px;font-weight:600;color:var(--cyan);text-transform:uppercase;letter-spacing:0.5px;">ESP32-CAM Live Feed</span>
+              <span id="feedStatus" style="font-size:10px;color:var(--amber);font-weight:600;">● OFFLINE</span>
+            </div>
+            
+            <div style="display:flex; gap: 8px; margin-bottom: 12px;">
+                <input type="text" id="espIpInput" placeholder="ESP32 IP (e.g. http://192.168.1.100)" style="flex:1; border:1px solid var(--line); border-radius:6px; padding:6px 8px; font-size:11px; background:var(--surface2); color:var(--text)">
+                <button type="button" onclick="setEspIp()" style="background:var(--cyan); color:#06121e; border:none; border-radius:6px; padding:6px 12px; font-weight:700; font-size:11px;">Connect</button>
+            </div>
+
+            <img id="lookcamFeed" src="/video_feed" style="width:100%; border-radius:8px; border:1px solid var(--line); display:block; min-height:200px; max-height:360px; object-fit:contain; background:#000;" alt="ESP32-CAM Live Feed">
+            
+            <div style="display:grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-top: 12px;">
+                <div>
+                    <label style="font-size:10px; color:var(--muted); display:block; margin-bottom:4px;">Resolution</label>
+                    <select onchange="updateEspControl('framesize', this.value)" style="width:100%; background:var(--surface2); color:var(--text); border:1px solid var(--line); border-radius:4px; padding:4px;">
+                        <option value="10">UXGA</option>
+                        <option value="9">SXGA</option>
+                        <option value="8">XGA</option>
+                        <option value="6" selected>VGA</option>
+                        <option value="4">QVGA</option>
+                    </select>
+                </div>
+                <div>
+                    <label style="font-size:10px; color:var(--muted); display:block; margin-bottom:4px;">LED Flash</label>
+                    <input type="range" min="0" max="255" value="0" onchange="updateEspControl('led_intensity', this.value)" style="width:100%;">
+                </div>
+                <div>
+                    <label style="font-size:10px; color:var(--muted); display:block; margin-bottom:4px;">V-Flip</label>
+                    <select onchange="updateEspControl('vflip', this.value)" style="width:100%; background:var(--surface2); color:var(--text); border:1px solid var(--line); border-radius:4px; padding:4px;">
+                        <option value="0">Off</option><option value="1">On</option>
+                    </select>
+                </div>
+                <div>
+                    <label style="font-size:10px; color:var(--muted); display:block; margin-bottom:4px;">Quality (low=better)</label>
+                    <input type="range" min="10" max="63" value="10" onchange="updateEspControl('quality', this.value)" style="width:100%;">
+                </div>
+            </div>
+            
+            <div style="margin-top: 12px; text-align: center;">
+                <button type="button" onclick="captureEspHighRes()" style="background:#4ab6ff; color:#06121e; border:none; border-radius:6px; padding:6px 12px; font-weight:700; font-size:11px; width: 100%;">📸 Capture High-Res Image to Disk</button>
+            </div>
+          </div>
+          <script>
+          (function() {
+            var status = document.getElementById('feedStatus');
+            var img = document.getElementById('lookcamFeed');
+            function checkFeed() {
+              fetch(`${API_BASE}/api/camera/status`).then(r => r.json()).then(function(data) {
+                if (data.connected && data.has_frame) {
+                  status.textContent = '● LIVE (' + data.configured_ip + ')';
+                  status.style.color = 'var(--green)';
+                  if (!img.src || img.src.indexOf('/video_feed') === -1) {
+                    img.src = `${API_BASE}/video_feed?t=` + Date.now();
+                  }
+                } else {
+                  status.textContent = '● OFFLINE (' + data.last_error + ')';
+                  status.style.color = 'var(--red)';
+                }
+                setTimeout(checkFeed, 3000);
+              }).catch(function() {
+                status.textContent = '● OFFLINE';
+                status.style.color = 'var(--red)';
+                setTimeout(checkFeed, 3000);
+              });
+            }
+            img.onerror = function() {
+              setTimeout(function() {
+                img.src = `${API_BASE}/video_feed?t=` + Date.now();
+              }, 2000);
+            };
+            setTimeout(checkFeed, 2000);
+          })();
+
+          function setEspIp() {
+              const ip = document.getElementById('espIpInput').value;
+              fetch(`${API_BASE}/set_ip`, {
+                  method: 'POST',
+                  headers: {'Content-Type': 'application/json'},
+                  body: JSON.stringify({ip: ip})
+              }).then(r => r.json()).then(data => {
+                  if(data.status === 'success') {
+                      alert("Connecting to ESP32: " + data.ip);
+                      document.getElementById('lookcamFeed').src = '/video_feed?t=' + Date.now();
+                  } else {
+                      alert("Error setting IP");
+                  }
+              });
+          }
+
+          function updateEspControl(varName, value) {
+              fetch(`${API_BASE}/control?var=${varName}&val=${value}`)
+                .then(r => r.json())
+                .then(data => { if(data.error) alert("Error: " + data.error); });
+          }
+          
+          function captureEspHighRes() {
+              fetch(`${API_BASE}/capture`)
+                .then(r => r.json())
+                .then(data => {
+                    if (data.status === 'success') {
+                        alert(data.message);
+                    } else {
+                        alert("Capture error: " + data.error);
+                    }
+                });
+          }
+          </script>
+          <div class="scan-controls"><input id="scanTemp" type="number" value="4" placeholder="Temp °C"><input
+              id="scanHum" type="number" value="62" placeholder="Humidity %"><button class="scan-btn" id="scanBtn">Run
+              AI Scan</button><button class="scan-btn" id="testAlarmBtn" type="button" style="background:#dc2626;border-color:#b91c1c;display:inline-flex;align-items:center;gap:4px" title="Test hardware buzzer & browser alert">🔔 Test Buzzer</button></div>
+          <div class="scan-result" id="scanResult">Ready for a quality assessment.</div>
+          <div class="ood-banner" id="oodBanner"
+            style="display:none;margin-top:12px;padding:11px 13px;border-radius:8px;background:rgba(255,107,120,.12);border:1px solid rgba(255,107,120,.3);color:#ff9aa4;font-size:11px">
+            <b style="display:block;margin-bottom:3px;font-size:12px">⚠️ Out-of-Distribution Rejection</b>
+            <span id="oodBannerText">Image rejected by AI guardrail. Please upload edible food items.</span>
+          </div>
+          <div class="xai-card" id="xaiCard">
+            <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px">
+              <span class="badge badge-safe" id="xaiProfileBadge">🥬 Produce Profile</span>
+              <small style="color:var(--muted);font-size:10px" id="xaiProfileThresholds">Safe Temp ≤ 8°C</small>
+            </div>
+            <div class="xai-header">
+              <span class="risk-badge" id="xaiBadge">--</span>
+              <span class="xai-pred" id="xaiPred"></span>
+              <span class="xai-score-label">Score: <b id="xaiFinalScore">--</b></span>
+            </div>
+            <div class="sub-scores">
+              <div class="sub-row"><span>🎨 Visual</span>
+                <div class="sub-bar-track">
+                  <div class="sub-bar-fill" id="barVisual" style="width:0%;background:var(--blue)"></div>
+                </div><b id="lblVisual">0%</b>
+              </div>
+              <div class="sub-row"><span>🌡 Temperature</span>
+                <div class="sub-bar-track">
+                  <div class="sub-bar-fill" id="barTemp" style="width:0%;background:var(--amber)"></div>
+                </div><b id="lblTemp">0%</b>
+              </div>
+              <div class="sub-row"><span>💧 Humidity</span>
+                <div class="sub-bar-track">
+                  <div class="sub-bar-fill" id="barHum" style="width:0%;background:var(--cyan)"></div>
+                </div><b id="lblHum">0%</b>
+              </div>
+              <div class="sub-row"><span>☁ Gas / VOC</span>
+                <div class="sub-bar-track">
+                  <div class="sub-bar-fill" id="barGas" style="width:0%;background:var(--red)"></div>
+                </div><b id="lblGas">0%</b>
+              </div>
+            </div>
+            <div class="driver-pill" id="xaiDriver">⚡ Primary Driver: --</div>
+            <div class="recommendation" id="xaiRec">--</div>
+          </div>
+        </div>
+        <div class="panel activity" style="grid-column: span 7;">
+          <div class="panel-head">
+            <div>
+              <h3 class="panel-title">Recent Activities</h3>
+              <div class="panel-subtitle">System events and model operations</div>
+            </div><span class="panel-link">Activity log</span>
+          </div>
+          <div class="activity-row"><i class="activity-dot"></i>
+            <div><b>Scan Completed</b><small>Freshness assessment completed for batch CHK-2048</small></div><span
+              style="margin-left:auto;color:var(--muted);font-size:10px">2 min ago</span>
+          </div>
+          <div class="activity-row"><i class="activity-dot"></i>
+            <div><b>New Data Received</b><small>ESP32_001 sent 5 sensor measurements</small></div><span
+              style="margin-left:auto;color:var(--muted);font-size:10px">5 min ago</span>
+          </div>
+          <div class="activity-row"><i class="activity-dot" style="background:var(--blue)"></i>
+            <div><b>AI Model Updated</b><small>Risk Engine ensemble v2.4 is operational</small></div><span
+              style="margin-left:auto;color:var(--muted);font-size:10px">1 hr ago</span>
+          </div>
+          <div class="activity-row"><i class="activity-dot" style="background:var(--cyan)"></i>
+            <div><b>Device Data Synced</b><small>12 of 12 active devices synchronized</small></div><span
+              style="margin-left:auto;color:var(--muted);font-size:10px">2 hr ago</span>
+          </div>
+        </div>
+        <div class="panel alerts" style="grid-column: span 5;">
+          <div class="panel-head">
+            <div>
+              <h3 class="panel-title">Critical Alerts</h3>
+              <div class="panel-subtitle">Requires attention</div>
+            </div><span class="panel-link">System alerts</span>
+          </div>
+          <div class="alert red">
+            <div class="alert-icon">!</div>
+            <div><b>High Ammonia Detected</b><small>Warehouse B &middot; 8 minutes ago</small></div>
+          </div>
+          <div class="alert">
+            <div class="alert-icon">⚠</div>
+            <div><b>Temperature Threshold Exceeded</b><small>Cold Storage A &middot; 22 minutes ago</small></div>
+          </div>
+          <div class="alert">
+            <div class="alert-icon">⚠</div>
+            <div><b>VOC Level Rising</b><small>Transit Hub 02 &middot; 1 hour ago</small></div>
+          </div>
+        </div>
+      </section>
+    </main>
+  </div>
+  <script>
+    var API_BASE = window.API_BASE || (window.location.port === '5000' ? '' : 'http://localhost:5000');
+    var MQ135_WARNING_THRESHOLD = window.MQ135_WARNING_THRESHOLD || 200;
+    const history = { temp: [], humidity: [], gas: [], voc: [] };
+    const $ = id => document.getElementById(id);
+    if ($('mq135ThresholdDisplay')) $('mq135ThresholdDisplay').textContent = MQ135_WARNING_THRESHOLD;
+
+    function updateClock() {
+      const now = new Date();
+      if ($('currentDate')) $('currentDate').textContent = now.toLocaleDateString(undefined, { day: '2-digit', month: 'long', year: 'numeric' });
+      if ($('currentTime')) $('currentTime').textContent = now.toLocaleTimeString();
+    }
+
+    function pushValue(list, value, max = 20) {
+      if (Number.isFinite(Number(value))) {
+        list.push(Number(value));
+        if (list.length > max) list.shift();
+      }
+    }
+
+    function drawLine(canvas, values, color, secondValues = null, secondColor = '#f6bd60') {
+      if (!canvas) return;
+      const rect = canvas.getBoundingClientRect();
+      const dpr = window.devicePixelRatio || 1;
+      const w = Math.max(rect.width || 0, 140);
+      const h = Math.max(rect.height || 0, 27);
+      canvas.width = w * dpr;
+      canvas.height = h * dpr;
+      const ctx = canvas.getContext('2d');
+      ctx.scale(dpr, dpr);
+      ctx.clearRect(0, 0, w, h);
+      ctx.strokeStyle = 'rgba(153,190,219,.12)';
+      ctx.lineWidth = 1;
+      for (let i = 1; i < 3; i++) {
+        const y = i * h / 3;
+        ctx.beginPath();
+        ctx.moveTo(0, y);
+        ctx.lineTo(w, y);
+        ctx.stroke();
+      }
+      [values, ...(secondValues ? [secondValues] : [])].forEach((data, si) => {
+        if (!data || !data.length) return;
+        const min = Math.min(...data);
+        const max = Math.max(...data);
+        const range = (max - min) || 1;
+        ctx.beginPath();
+        data.forEach((v, i) => {
+          const x = i * (w - 10) / (data.length - 1 || 1) + 5;
+          const y = h - 4 - ((v - min) / range) * (h - 8);
+          i ? ctx.lineTo(x, y) : ctx.moveTo(x, y);
+        });
+        ctx.strokeStyle = [color, secondColor][si];
+        ctx.lineWidth = 2;
+        ctx.lineJoin = 'round';
+        ctx.stroke();
+      });
+    }
+
+    function redrawCharts() {
+      [['tempMini', history.temp, '#4ab6ff'], ['humMini', history.humidity, '#63e6e2'], ['gasMini', history.gas, '#f6bd60'], ['vocMini', history.voc, '#ff6b78']].forEach(([id, data, color]) => {
+        const el = $(id);
+        if (el) drawLine(el, data, color);
+      });
+    }
+
+    async function initSensorHistory() {
+      try {
+        const res = await fetch(`${API_BASE}/api/sensors/history?limit=20`);
+        if (!res.ok) return;
+        const d = await res.json();
+        if (d.success && Array.isArray(d.readings) && d.readings.length > 0) {
+          const rev = [...d.readings].reverse();
+          history.temp = rev.map(r => Number(r.temperature)).filter(Number.isFinite);
+          history.humidity = rev.map(r => Number(r.humidity)).filter(Number.isFinite);
+          history.gas = rev.map(r => Number(r.gas)).filter(Number.isFinite);
+          history.voc = rev.map(r => Number(r.mq135_raw)).filter(Number.isFinite);
+          redrawCharts();
+        }
+      } catch (e) { }
+    }
+
+    function renderFoodTable(items) { const tbody = $('foodItemsTableBody'); if (!tbody || !items || !items.length) return; if ($('datasetClassCountBadge')) $('datasetClassCountBadge').textContent = `${items.length} Food Categories`; tbody.innerHTML = items.map(item => { let badge = '<span class="badge badge-muted">NO SCANS</span>'; let barColor = 'var(--muted)'; if (item.status === 'SAFE') { badge = '<span class="badge badge-safe">SAFE</span>'; barColor = 'var(--green)' } else if (item.status === 'WARNING') { badge = '<span class="badge badge-warn">WARNING</span>'; barColor = 'var(--amber)' } else if (item.status === 'SPOILED') { badge = '<span class="badge badge-unsafe">SPOILED</span>'; barColor = 'var(--red)' } const rateText = item.safety_rate !== null ? `${item.safety_rate}%` : 'N/A'; const rateVal = item.safety_rate !== null ? item.safety_rate : 0; const lastSeen = item.last_scanned ? new Date(item.last_scanned).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : '—'; return `<tr><td><div class="food-name-cell"><div class="food-icon-box">${item.icon}</div><b>${item.name}</b></div></td><td><span class="code-pill">${item.dataset_class}</span></td><td><b style="font-family:'Space Grotesk'">${item.total}</b></td><td><span class="badge badge-safe">${item.fresh}</span></td><td><span class="badge ${item.rotten > 0 ? 'badge-unsafe' : 'badge-muted'}">${item.rotten}</span></td><td><div class="table-progress-wrap"><div class="table-progress"><div class="table-progress-fill" style="width:${rateVal}%;background:${barColor}"></div></div><b style="font-size:11px">${rateText}</b></div></td><td>${badge}</td><td style="color:var(--muted);font-size:11px">${lastSeen}</td></tr>` }).join('') }
+    function renderRecentScans(scans) { const tbody = $('recentScansTableBody'); if (!tbody || !scans) return; if ($('recentScansCountBadge')) $('recentScansCountBadge').textContent = `${scans.length} Recent Records`; if (!scans.length) { tbody.innerHTML = '<tr><td colspan="5" style="text-align:center;color:var(--muted);padding:20px">No scans recorded yet.</td></tr>'; return } tbody.innerHTML = scans.map(s => { let badgeClass = 'badge-safe'; if (s.status === 'UNSAFE') badgeClass = 'badge-unsafe'; else if (s.status === 'WARNING') badgeClass = 'badge-warn'; const timeStr = s.timestamp ? new Date(s.timestamp).toLocaleTimeString() : '—'; return `<tr><td style="color:var(--muted);font-family:monospace">#${s.id}</td><td style="color:var(--muted)">${timeStr}</td><td><b>${s.prediction}</b></td><td><span class="badge ${badgeClass}">${s.status}</span></td><td style="font-family:'Space Grotesk';font-weight:700">${s.score_pct}%</td></tr>` }).join('') }
+
+    function updateSensors(data) {
+      if (!data) return;
+      const hasReading = data.temperature !== null && data.temperature !== undefined && !isNaN(Number(data.temperature));
+      if (hasReading) {
+        const temp = Number(data.temperature);
+        const hum = Number(data.humidity);
+        const gas = Number(data.gas);
+        const mq2 = data.mq2_digital !== null && data.mq2_digital !== undefined ? Number(data.mq2_digital) : null;
+
+        if ($('liveTempValue')) $('liveTempValue').textContent = temp.toFixed(1);
+        if ($('liveHumValue')) $('liveHumValue').textContent = hum.toFixed(1);
+        if ($('liveGasValue')) $('liveGasValue').textContent = Math.round(gas);
+        if ($('liveGasRaw')) {
+          const rawVal = data.mq135_raw !== null && data.mq135_raw !== undefined ? data.mq135_raw : null;
+          $('liveGasRaw').textContent = rawVal !== null ? `ADC: ${rawVal}` : '';
+        }
+        if ($('liveMq135Value')) {
+          if (mq2 === null) $('liveMq135Value').textContent = '--';
+          else if (mq2 === 0) $('liveMq135Value').textContent = 'DETECTED';
+          else $('liveMq135Value').textContent = 'CLEAR';
+        }
+
+        if ($('scanTemp') && !$('scanTemp').dataset.custom) { $('scanTemp').value = Math.round(temp) }
+        if ($('scanHum') && !$('scanHum').dataset.custom) { $('scanHum').value = Math.round(hum) }
+
+        if ($('tempStatusText')) {
+          if (temp >= 20.0 && temp <= 30.0) {
+            $('tempStatus').style.color = 'var(--green)';
+            $('tempDot').style.background = 'var(--green)';
+            $('tempStatusText').textContent = 'Optimal ambient (20–30°C)';
+          } else if (temp < 20.0) {
+            $('tempStatus').style.color = 'var(--blue)';
+            $('tempDot').style.background = 'var(--blue)';
+            $('tempStatusText').textContent = 'Cool / Low temp (<20°C)';
+          } else if (temp <= 35.0) {
+            $('tempStatus').style.color = 'var(--amber)';
+            $('tempDot').style.background = 'var(--amber)';
+            $('tempStatusText').textContent = 'Warm / Elevated (>30°C)';
+          } else {
+            $('tempStatus').style.color = 'var(--red)';
+            $('tempDot').style.background = 'var(--red)';
+            $('tempStatusText').textContent = 'High heat risk (>35°C)';
+          }
+        }
+
+        if ($('humStatusText')) {
+          if (hum >= 50 && hum <= 70) {
+            $('humStatus').style.color = 'var(--green)';
+            $('humDot').style.background = 'var(--green)';
+            $('humStatusText').textContent = 'Optimal range (55–70%)';
+          } else if (hum > 70) {
+            $('humStatus').style.color = 'var(--amber)';
+            $('humDot').style.background = 'var(--amber)';
+            $('humStatusText').textContent = 'High moisture risk';
+          } else {
+            $('humStatus').style.color = 'var(--blue)';
+            $('humDot').style.background = 'var(--blue)';
+            $('humStatusText').textContent = 'Low humidity';
+          }
+        }
+
+        if ($('gasStatusText')) {
+          if (gas < 120) {
+            $('gasStatus').style.color = 'var(--green)';
+            $('gasDot').style.background = 'var(--green)';
+            $('gasStatusText').textContent = 'Normal / Fresh (<120)';
+          } else if (gas < MQ135_WARNING_THRESHOLD) {
+            $('gasStatus').style.color = 'var(--amber)';
+            $('gasDot').style.background = 'var(--amber)';
+            $('gasStatusText').textContent = 'Moderate / Pre-spoilage';
+          } else {
+            $('gasStatus').style.color = 'var(--red)';
+            $('gasDot').style.background = 'var(--red)';
+            $('gasStatusText').textContent = 'Spoilage Gas Alert (≥200)';
+          }
+        }
+
+        if ($('vocStatusText')) {
+          if (mq2 === null) {
+            $('vocStatusText').textContent = 'Awaiting data';
+          } else if (mq2 === 1) {
+            $('vocStatus').style.color = 'var(--green)';
+            $('vocDot').style.background = 'var(--green)';
+            $('vocStatusText').textContent = 'Safe / Clear';
+          } else {
+            $('vocStatus').style.color = 'var(--red)';
+            $('vocDot').style.background = 'var(--red)';
+            $('vocStatusText').textContent = 'Gas/Smoke Alert';
+          }
+        }
+
+        if (data.status === 'connected' || !history.temp.length) {
+          pushValue(history.temp, temp);
+          pushValue(history.humidity, hum);
+          pushValue(history.gas, gas);
+          if (voc !== null) pushValue(history.voc, voc);
+          redrawCharts();
+        }
+      }
+
+      if (data.status === 'connected') {
+        if ($('systemStatus')) $('systemStatus').innerHTML = '<span class="dot" style="background:var(--green)"></span><span style="color:var(--green)">System Online · Live</span>';
+        if ($('totalDevicesStat')) $('totalDevicesStat').textContent = '1';
+        if ($('totalDevicesTrend')) $('totalDevicesTrend').textContent = 'Live telemetry streaming';
+        if ($('sensorSubtitle')) $('sensorSubtitle').textContent = `${data.device_id || 'ESP32_001'} · Fresh Produce Storage · Live Telemetry (Active)`;
+        if ($('sensorRefreshBadge')) { $('sensorRefreshBadge').textContent = '● Live (5s)'; $('sensorRefreshBadge').style.color = 'var(--green)' }
+      } else if (data.status === 'disconnected') {
+        const ageSec = data.age_seconds || 0;
+        const ageMin = Math.round(ageSec / 60);
+        const ageText = ageMin > 60 ? `${Math.round(ageMin / 60)}h ago` : (ageMin > 0 ? `${ageMin}m ago` : `${Math.round(ageSec)}s ago`);
+        if ($('systemStatus')) $('systemStatus').innerHTML = '<span class="dot" style="background:var(--amber)"></span><span style="color:var(--amber)">Device Offline (Showing Cached Data)</span>';
+        if ($('totalDevicesStat')) $('totalDevicesStat').textContent = hasReading ? '1 (Cached)' : '0';
+        if ($('totalDevicesTrend')) $('totalDevicesTrend').textContent = hasReading ? `Last seen ${ageText}` : 'No live signals';
+        if ($('sensorSubtitle')) $('sensorSubtitle').textContent = `${data.device_id || 'ESP32_001'} · Cold Storage Unit A · Offline (Last seen ${ageText})`;
+        if ($('sensorRefreshBadge')) { $('sensorRefreshBadge').textContent = 'Cached Data'; $('sensorRefreshBadge').style.color = 'var(--amber)' }
+      } else {
+        if ($('systemStatus')) $('systemStatus').innerHTML = '<span class="dot" style="background:var(--muted)"></span><span>Waiting for ESP32</span>';
+        if ($('totalDevicesStat')) $('totalDevicesStat').textContent = '0';
+        if ($('totalDevicesTrend')) $('totalDevicesTrend').textContent = 'Awaiting connection';
+        if ($('sensorSubtitle')) $('sensorSubtitle').textContent = 'Awaiting device connection…';
+      }
+    }
+
+    let simInterval = null;
+    function toggleSimulation() {
+      const btn = $('simBtn');
+      const dot = $('simDot');
+      const txt = $('simBtnText');
+      if (simInterval) {
+        clearInterval(simInterval);
+        simInterval = null;
+        if (btn) {
+          btn.style.background = 'rgba(99,230,226,.08)';
+          btn.style.borderColor = 'rgba(99,230,226,.35)';
+          btn.style.color = 'var(--cyan)';
+        }
+        if (dot) {
+          dot.style.background = 'var(--cyan)';
+          dot.style.boxShadow = 'none';
+        }
+        if (txt) txt.textContent = 'Simulate Live Data';
+      } else {
+        if (btn) {
+          btn.style.background = 'rgba(78,212,154,.2)';
+          btn.style.borderColor = 'var(--green)';
+          btn.style.color = 'var(--green)';
+        }
+        if (dot) {
+          dot.style.background = 'var(--green)';
+          dot.style.boxShadow = '0 0 8px var(--green)';
+        }
+        if (txt) txt.textContent = 'Simulating Live Data (Click to Stop)';
+        const pulse = async () => {
+          const baseTemp = Number((27 + Math.random()).toFixed(1));
+          const baseHum = Number((62.0 + (Math.random() * 4 - 2)).toFixed(1));
+          const baseGas = Number((42.0 + (Math.random() * 6 - 3)).toFixed(1));
+          const baseVoc = Math.round(350 + (Math.random() * 40 - 20));
+          try {
+            await fetch(`${API_BASE}/api/sensors/data`, {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({
+                device_id: 'SIM_ESP32_001',
+                source: 'simulation',
+                temperature: baseTemp,
+                humidity: baseHum,
+                gas: baseGas,
+                mq135_raw: baseVoc,
+                mq2_digital: 1,
+                alarm: false
+              })
+            });
+            pollSensors();
+            pollDangerZone();
+          } catch (e) { }
+        };
+        pulse();
+        simInterval = setInterval(pulse, 5000);
+      }
+    }
+
+    async function pollSensors() {
+      try {
+        const response = await fetch(`${API_BASE}/api/sensors/latest`);
+        updateSensors(await response.json());
+      } catch (error) {
+        if ($('systemStatus')) $('systemStatus').textContent = 'Backend unavailable';
+      }
+    }
+
+    async function pollDangerZone() {
+      try {
+        const res = await fetch(`${API_BASE}/api/sensors/danger_zone`);
+        const dz = await res.json();
+        if (dz.status === 'no_data' || dz.status === 'error') return;
+        const mins = dz.cumulative_minutes || 0;
+        if ($('dzMinutes')) $('dzMinutes').textContent = mins.toFixed(1);
+        const pct = Math.min(100, (mins / 120) * 100);
+        const fill = $('dzBarFill'), dot = $('dzDot'), txt = $('dzStatusText');
+        if (fill) fill.style.width = pct + '%';
+        if (dz.alert_level === 'critical') {
+          if (fill) fill.style.background = 'var(--red)';
+          if (dot) { dot.style.background = 'var(--red)'; dot.style.boxShadow = '0 0 10px var(--red)' }
+          if (txt) txt.textContent = 'Critical — discard food';
+        } else if (dz.alert_level === 'warning') {
+          if (fill) fill.style.background = 'var(--amber)';
+          if (dot) { dot.style.background = 'var(--amber)'; dot.style.boxShadow = '0 0 10px var(--amber)' }
+          if (txt) txt.textContent = 'Warning — inspect soon';
+        } else {
+          if (fill) fill.style.background = 'var(--green)';
+          if (dot) { dot.style.background = 'var(--green)'; dot.style.boxShadow = '0 0 10px var(--green)' }
+          if (txt) txt.textContent = 'Zone clear';
+        }
+      } catch (e) { }
+    }
+
+    async function pollModelMetrics() {
+      try {
+        const res = await fetch(`${API_BASE}/api/model/metrics`);
+        if (!res.ok) return;
+        const d = await res.json();
+        const metrics = d.metrics || {};
+        if ($('modelAccStat') && metrics.overall_multiclass_accuracy) $('modelAccStat').textContent = metrics.overall_multiclass_accuracy + '%';
+        if ($('modelF1Stat') && metrics.binary_freshness?.f1_score) $('modelF1Stat').textContent = metrics.binary_freshness.f1_score;
+      } catch (e) { }
+    }
+
+    async function pollRiskStats() {
+      try {
+        const res = await fetch(`${API_BASE}/api/risk/stats`);
+        if (!res.ok) return;
+        const data = await res.json();
+        if (!data.success) return;
+        if ($('totalScansStat')) $('totalScansStat').textContent = String(data.total_scans ?? 0);
+        if ($('safePercentStat')) $('safePercentStat').textContent = (data.safe_percent ?? 0) + '%';
+        if ($('riskPercentStat')) $('riskPercentStat').textContent = (data.risk_percent ?? 0) + '%';
+        if ($('unsafePercentStat')) $('unsafePercentStat').textContent = (data.unsafe_percent ?? 0) + '%';
+        if ($('totalScansTrend')) $('totalScansTrend').textContent = `${data.total_scans} total in DB`;
+        if ($('shelfLifeStat') && data.safe_percent !== undefined) {
+          const estDays = Math.max(1, Math.round((data.safe_percent / 100) * 7 * 10) / 10);
+          $('shelfLifeStat').innerHTML = `${estDays} <small style="font-size:12px;color:var(--muted)">days</small>`;
+        }
+        if (data.food_items) renderFoodTable(data.food_items);
+        if (data.recent_scans) renderRecentScans(data.recent_scans);
+      } catch (e) { }
+    }
+
+    function renderXaiCard(data) {
+      const card = $('xaiCard');
+      const badge = $('xaiBadge');
+      if (!card || !badge) return;
+      badge.textContent = data.risk_level || '--';
+      badge.className = 'risk-badge ' + (data.risk_level || '');
+      if ($('xaiPred')) $('xaiPred').textContent = data.top_prediction ? data.top_prediction.replaceAll('_', ' ') : 'Sensor only';
+      if ($('xaiFinalScore')) $('xaiFinalScore').textContent = Math.round((data.final_score || 0) * 100) + '%';
+      if ($('xaiProfileBadge') && data.category_name) $('xaiProfileBadge').textContent = `${data.category_name} Profile`;
+      if ($('xaiProfileThresholds') && data.profile_applied) {
+        const p = data.profile_applied;
+        $('xaiProfileThresholds').textContent = `Safe Temp ≤${p.temp_safe_max}°C · Gas Base ${p.gas_base_ppm}ppm`;
+      }
+      const setPct = (barId, lblId, val) => {
+        const p = Math.round((val || 0) * 100);
+        if ($(barId)) $(barId).style.width = p + '%';
+        if ($(lblId)) $(lblId).textContent = p + '%';
+      };
+      setPct('barVisual', 'lblVisual', data.visual_score);
+      setPct('barTemp', 'lblTemp', data.temp_penalty);
+      setPct('barHum', 'lblHum', data.humidity_penalty);
+      setPct('barGas', 'lblGas', data.gas_penalty);
+      if ($('xaiDriver')) $('xaiDriver').textContent = '⚡ Primary Driver: ' + (data.primary_driver || '--');
+      if ($('xaiRec')) $('xaiRec').textContent = data.recommendation || '';
+      card.classList.add('visible');
+    }
+
+    if ($('imageInput')) $('imageInput').addEventListener('change', e => {
+      if ($('fileName')) $('fileName').textContent = e.target.files[0]?.name || 'No image selected';
+    });
+
+    if ($('scanTemp')) $('scanTemp').addEventListener('input', () => { $('scanTemp').dataset.custom = '1'; });
+    if ($('scanHum')) $('scanHum').addEventListener('input', () => { $('scanHum').dataset.custom = '1'; });
+
+    if ($('scanBtn')) $('scanBtn').addEventListener('click', async () => {
+      const file = $('imageInput')?.files[0];
+      if ($('oodBanner')) $('oodBanner').style.display = 'none';
+      
+      const form = new FormData();
+      if (file) {
+        form.append('image', file);
+      } else if (window.captureBrowserCameraFile && window.activeCameraStream) {
+        form.append('image', await window.captureBrowserCameraFile());
+      } else {
+        // If no file is selected, ask backend to capture the latest phone camera frame.
+        form.append('use_lookcam', 'true');
+      }
+      form.append('temperature', $('scanTemp')?.value || '4');
+      form.append('humidity', $('scanHum')?.value || '60');
+      form.append('gas', '40');
+      const selectedCat = $('foodCategorySelect')?.value || 'auto';
+      if (selectedCat !== 'auto') form.append('category', selectedCat);
+
+      $('scanBtn').textContent = 'Analyzing…';
+      $('scanBtn').disabled = true;
+      try {
+        const response = await fetch(`${API_BASE}/analyze`, { method: 'POST', body: form });
+        const data = await response.json();
+        if (response.status === 422 || data.is_food === false) {
+          if ($('oodBanner')) {
+            $('oodBanner').style.display = 'block';
+            if ($('oodBannerText')) $('oodBannerText').textContent = data.error || 'Out-of-distribution rejection: Non-food item detected.';
+          }
+          if ($('scanResult')) $('scanResult').innerHTML = `<strong style="color:var(--red)">⛔ REJECTED (NON-FOOD)</strong>&nbsp;&nbsp;${data.detected_category ? 'Detected: ' + data.detected_category : 'Out-of-distribution'}`;
+          if ($('xaiCard')) $('xaiCard').classList.remove('visible');
+          return;
+        }
+        if (!response.ok) throw new Error(data.error || response.statusText);
+        if (!data.is_safe) {
+          playBuzzerAlert();
+        }
+        if ($('scanResult')) $('scanResult').innerHTML = `<strong style="color:${data.is_safe ? 'var(--green)' : 'var(--red)'}">● ${data.risk_level || (data.is_safe ? 'SAFE' : 'UNSAFE')}</strong>&nbsp;&nbsp;${(data.top_prediction || 'Food analysis').replaceAll('_', ' ')}&nbsp;&nbsp;<span style="color:var(--muted)">Score ${Math.round((data.final_score || 0) * 100)}%</span>`;
+        renderXaiCard(data);
+        pollRiskStats();
+      } catch (error) {
+        if ($('scanResult')) $('scanResult').textContent = 'Analysis failed: ' + error.message;
+        if ($('xaiCard')) $('xaiCard').classList.remove('visible');
+      } finally {
+        $('scanBtn').textContent = 'Run AI Scan';
+        $('scanBtn').disabled = false;
+      }
+    });
+
+    function playBuzzerAlert() {
+      try {
+        const AudioContext = window.AudioContext || window.webkitAudioContext;
+        if (!AudioContext) return;
+        const ctx = new AudioContext();
+        if (ctx.state === 'suspended') ctx.resume();
+        const beeps = [0, 0.22, 0.44];
+        beeps.forEach(t => {
+          const osc = ctx.createOscillator();
+          const gain = ctx.createGain();
+          osc.type = 'sawtooth';
+          osc.frequency.setValueAtTime(950, ctx.currentTime + t);
+          osc.frequency.exponentialRampToValueAtTime(800, ctx.currentTime + t + 0.16);
+          gain.gain.setValueAtTime(0.35, ctx.currentTime + t);
+          gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + t + 0.16);
+          osc.connect(gain);
+          gain.connect(ctx.destination);
+          osc.start(ctx.currentTime + t);
+          osc.stop(ctx.currentTime + t + 0.18);
+        });
+      } catch (err) {
+        console.warn('Web Audio buzzer error:', err);
+      }
+    }
+
+    if ($('testAlarmBtn')) $('testAlarmBtn').addEventListener('click', async () => {
+      playBuzzerAlert();
+      try {
+        $('testAlarmBtn').textContent = '🔔 Sounding…';
+        $('testAlarmBtn').disabled = true;
+        const res = await fetch(`${API_BASE}/api/alarm/test`, { method: 'POST' });
+        const resData = await res.json();
+        if ($('scanResult')) $('scanResult').innerHTML = '<strong style="color:var(--red)">🔔 TEST ALARM ACTIVATED</strong>&nbsp;&nbsp;Buzzer &amp; LED active for 15s';
+      } catch (e) {
+        console.warn('Manual alarm trigger failed:', e);
+      } finally {
+        setTimeout(() => {
+          if ($('testAlarmBtn')) {
+            $('testAlarmBtn').textContent = '🔔 Test Buzzer';
+            $('testAlarmBtn').disabled = false;
+          }
+        }, 3000);
+      }
+    });
+
+    updateClock();
+    setInterval(updateClock, 1000);
+    initSensorHistory();
+    pollSensors();
+    pollDangerZone();
+    pollRiskStats();
+    pollModelMetrics();
+    setInterval(pollSensors, 5000);
+    setInterval(pollDangerZone, 10000);
+    setInterval(pollRiskStats, 10000);
+    window.addEventListener('resize', redrawCharts);
+    window.addEventListener('load', () => {
+      initSensorHistory();
+      pollSensors();
+      pollRiskStats();
+      pollModelMetrics();
+    });
+  </script>
+  <script>
+    let cameraStream = null;
+    async function startBrowserCamera(targetId = 'cameraPreview') {
+      cameraStream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: 'environment' }, audio: false });
+      window.activeCameraStream = cameraStream;
+      const target = document.getElementById(targetId);
+      if (target) {
+        target.srcObject = cameraStream;
+        target.style.display = 'block';
+      }
+      return cameraStream;
+    }
+    function stopCamera() {
+      document.getElementById('cameraActions').style.display = 'none';
+      document.getElementById('cameraPreview').style.display = 'none';
+      const browserLiveFeed = document.getElementById('browserLiveFeed');
+      if (browserLiveFeed) browserLiveFeed.style.display = 'none';
+      if (cameraStream) {
+        cameraStream.getTracks().forEach(track => track.stop());
+        cameraStream = null;
+        window.activeCameraStream = null;
+      }
+    }
+    window.captureBrowserCameraFile = async function() {
+      const preview = document.getElementById('browserLiveFeed').style.display === 'block' ? document.getElementById('browserLiveFeed') : document.getElementById('cameraPreview');
+      if (!preview.videoWidth) throw new Error('Browser camera is still warming up. Try again in a second.');
+      const canvas = document.getElementById('cameraCanvas');
+      canvas.width = preview.videoWidth;
+      canvas.height = preview.videoHeight;
+      canvas.getContext('2d').drawImage(preview, 0, 0);
+      const blob = await new Promise(resolve => canvas.toBlob(resolve, 'image/jpeg', .9));
+      return new File([blob], `webcam-${Date.now()}.jpg`, { type: 'image/jpeg' });
+    };
+    document.getElementById('cameraBtn').addEventListener('click', async () => { try { await startBrowserCamera('cameraPreview'); document.getElementById('cameraActions').style.display = 'flex' } catch (error) { document.getElementById('scanResult').textContent = 'Camera unavailable. Please allow camera access or upload an image.' } });
+    document.getElementById('browserLiveBtn')?.addEventListener('click', async () => { try { await startBrowserCamera('browserLiveFeed'); document.getElementById('lookcamFeed').style.display = 'none'; document.getElementById('feedStatus').textContent = 'BROWSER LIVE'; document.getElementById('feedStatus').style.color = 'var(--green)' } catch (error) { document.getElementById('scanResult').textContent = 'Camera unavailable. Please allow camera access or upload an image.' } });
+    document.getElementById('closeCameraBtn').addEventListener('click', stopCamera);
+    document.getElementById('captureBtn').addEventListener('click', async () => { const file = await window.captureBrowserCameraFile(); const transfer = new DataTransfer(); transfer.items.add(file); document.getElementById('imageInput').files = transfer.files; document.getElementById('fileName').textContent = 'Webcam photo captured'; stopCamera() });
+    const uploadArea = document.querySelector('.upload'); uploadArea.addEventListener('dragover', event => { event.preventDefault(); uploadArea.style.borderColor = 'var(--cyan)'; uploadArea.style.background = 'rgba(99,230,226,.12)' }); uploadArea.addEventListener('dragleave', () => { uploadArea.style.borderColor = ''; uploadArea.style.background = '' }); uploadArea.addEventListener('drop', event => { event.preventDefault(); uploadArea.style.borderColor = ''; uploadArea.style.background = ''; const file = [...event.dataTransfer.files].find(item => item.type.startsWith('image/')); if (!file) { document.getElementById('scanResult').textContent = 'Please drop an image file.'; return } const transfer = new DataTransfer(); transfer.items.add(file); document.getElementById('imageInput').files = transfer.files; document.getElementById('fileName').textContent = `Dropped: ${file.name}` });
+    const scanResultObserver = new MutationObserver(() => { const result = document.getElementById('scanResult'); const text = result.textContent.trim(); if (!text || text === 'Ready for a quality assessment.' || text.startsWith('Analysis failed:')) return; pollRiskStats() }); scanResultObserver.observe(document.getElementById('scanResult'), { childList: true, subtree: true, characterData: true });
+  </script>
+</body>
+
+</html>

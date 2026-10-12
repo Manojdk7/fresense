@@ -1,0 +1,23 @@
+venv/
+__pycache__/
+*.zip
+*.tar.gz
+*.pt
+*.h5
+.ipynb_checkpoints/
+.env
+05_esp32/secrets.h
+foodsafe.db
+result_images/*
+!result_images/.gitkeep
+
+# Large Model Weights & Caches (>100MB, blocked by GitHub)
+*.bin
+*.msgpack
+*.kaggle-partial
+*.mjpg
+*.log
+.cache/
+
+# Embedded reference repo
+_reference_project/

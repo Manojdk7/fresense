@@ -1,0 +1,13 @@
+{
+    "git.ignoreLimitWarning": true,
+    "python.defaultInterpreterPath": "${workspaceFolder}/venv/Scripts/python.exe",
+    "python.analysis.extraPaths": [
+        "${workspaceFolder}/03_code",
+        "${workspaceFolder}"
+    ],
+    "python.autoComplete.extraPaths": [
+        "${workspaceFolder}/03_code",
+        "${workspaceFolder}"
+    ],
+    "python.analysis.typeCheckingMode": "off"
+}
